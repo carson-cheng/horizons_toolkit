@@ -36,15 +36,15 @@ Arrival delta-v: 5.562601673161371 km/s
 Minimum distance at day 10 ; Distance from desired circle: 0.00011312994870160686 AU  
 1127
 
-The first two lines contain the same number (time of travel); this variable is printed twice.
-The following eight lines contain the departure and arrival position and velocity vectors, as marked in the output. Note that the speed is heliocentric instead of relative to the object.
-The departure and arrival delta-v is the relative velocity of the trajectory from the departure object at departure, and from the arrival object at arrival, respectively
-The following line contains the heliocentric distance of the arrival object at arrival point
-The two following lines contain the relative position of the trajectory of the object from departure on the second day and the second-last day of the trajectory, respectively
-The second-last line contains the data on the minimum distance of the trajectory from a specific heliocentric distance
-The last line contains the time from launch to the end of orbit propagation. Note that it is normally longer than time of travel, but it can also be shorter (as in this case)
+The first two lines contain the same number (time of travel); this variable is printed twice.  
+The following eight lines contain the departure and arrival position and velocity vectors, as marked in the output. Note that the speed is heliocentric instead of relative to the object.  
+The departure and arrival delta-v is the relative velocity of the trajectory from the departure object at departure, and from the arrival object at arrival, respectively.  
+The following line contains the heliocentric distance of the arrival object at arrival point.  
+The two following lines contain the relative position of the trajectory of the object from departure on the second day and the second-last day of the trajectory, respectively.  
+The second-last line contains the data on the minimum distance of the trajectory from a specific heliocentric distance.  
+The last line contains the time from launch to the end of orbit propagation. Note that it is normally longer than time of travel, but it can also be shorter (as in this case).  
 
-When the trajectory is being generated into a gif file, positive integers are printed in ascending order. This records a frame being created and saved. Note that you should not generate more than 240 frames in a single file, or an error saying that too many files are open may appear.
+When the trajectory is being generated into a gif file, positive integers are printed in ascending order. This records a frame being created and saved.   Note that you should not generate more than 240 frames in a single file, or an error saying that too many files are open may appear.  
 
 After the trajectory is generated, you may see something like this:
 

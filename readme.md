@@ -68,3 +68,4 @@ This is the closest_approach function being called repeatedly in a for-loop. Thi
   1. Support gifs with more frames with an animate graph function that does not save lots of temporary files
   2. Use a more rigorous MOID computation function
   3. Include a v-infinity matching function to calculate gravity assists
+  4. Include the perturbations of the planets instead of simply using a two-body solution (this is more difficult as it requires a completely different approach for the computation, but it should be doable using existing software)

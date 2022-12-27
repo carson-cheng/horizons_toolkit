@@ -263,3 +263,94 @@ def get_moid(command1, command2, start_date, orbital_period):
             dist = distance(ephemeris1[0][item], ephemeris1[1][item], ephemeris1[2][item], ephemeris2[0][item2], ephemeris2[1][item2], ephemeris2[2][item2])
             distances.append(dist)
     return min(distances) / au
+def small_body_query(param_list, fields):
+    #retrieves data from the small_body database
+    #param_list: [(property, operator, value)]
+    #for ranges, the value should be a string (e.g., "1-1.3")
+    #e.g., [("type", "=", "TJN"), ("q", "<", "1.3")]
+    #Uses the "AND" operator instead of the "OR" operator
+    #fields: [field, field]
+    #e.g., ["pdes", "H"]
+    #example: small_body_query([("type", "=", "TJN"), ("q", "range", "4-5"), ("a", "<", 6)], ["pdes", "H"])
+    strings = []
+    status = []
+    for item in param_list:
+        #Decide on parameter
+        if item[0] == "type":
+            param = "sb-class"
+        else:
+            param = item[0]
+        #Decide on operator
+        if item[1] == "=":
+            if param != "sb-class":
+                operator = "EQ"
+            else:
+                operator = "="
+        elif item[1] == "!=":
+            operator = "NE"
+        elif item[1] == "<":
+            operator = "LT"
+        elif item[1] == ">":
+            operator = "GT"
+        elif item[1] == "range":
+            operator = "RG"
+        else:
+            operator = item[1]
+        #Decide on value of filter based on whether it is a range
+        if operator == "RG":
+            value = item[2].split("-")
+        else:
+            value = str(item[2])
+        if param == "sb-class":
+            custom = False
+            #not contained in custom constraints
+            string = param + operator + value
+        else:
+            custom = True
+            #contained in custom constraints
+            if operator != "RG":
+                string = param + "|" + operator + "|" + value
+            else:
+                string = param + "|" + operator + "|" + value[0] + "|" + value[1]
+        status.append(custom)
+        strings.append(string)
+    print(status)
+    print(strings)
+    general = "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields="
+    custom = '{"AND":['
+    #first deal with the fields
+    fields = [str(x) + "," for x in fields]
+    for item in fields:
+        general += item
+    general = general[0:-1] + "&"
+    #then deal with the constraints
+    for item in range(len(strings)):
+        if status[item] == False:
+            general = general + strings[item] + "&"
+        else:
+            custom = custom + '"' + strings[item] + '",'
+    general += "sb-cdata="
+    custom = custom[0:-1] + "]}"
+    url = general + custom
+    data = requests.get(url).text
+    #print(data)
+    #get count
+    count = data.split(":")[-1].split("}")[0]
+    print("Qualifying objects: " + count)
+    #return data
+    objects = data.split('"data":[')[1].split('],"count"')[0]
+    objs = objects.split("[")[1:]
+    print(objs[-1])
+    final_output = []
+    for item in objs:
+        processed = item.split("]")[0]
+        values = processed.split(",")
+        values = [x[1:-1] for x in values]
+        final_output.append(values)
+    return final_output
+def number_to_command(number):
+    #function that turns a number into the "command" parameter by the Horizons system
+    if number < 1000000:
+        return "'DES=" + str(2000000 + number) + "'"
+    else:
+        return "'DES=" + str(number) + "'"

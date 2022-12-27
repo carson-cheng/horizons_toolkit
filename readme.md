@@ -67,3 +67,4 @@ This is the closest_approach function being called repeatedly in a for-loop. Thi
  
   1. Support gifs with more frames with an animate graph function that does not save lots of temporary files
   2. Use a more rigorous MOID computation function
+  3. Include a v-infinity matching function to calculate gravity assists

@@ -60,3 +60,10 @@ This is the closest_approach function being called repeatedly in a for-loop. Thi
  ## Notes
  
  Note that all transfer trajectories are computed and plotted using two-body methods. Thus, it may become inaccurate over years or decades. Thus, for scientifically rigorous results and studies, perturbations should be included in addition to the nominal two-body trajectory.
+ 
+ Also note that if any errors are encountered while running the data_to_gif function, the temporary png files are not deleted. In that case, you need to delete them yourself using "rm *.png".
+ 
+ ## Improvements
+ 
+  1. Support gifs with more frames with an animate graph function that does not save lots of temporary files
+  2. Use a more rigorous MOID computation function

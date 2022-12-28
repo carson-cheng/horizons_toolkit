@@ -282,7 +282,7 @@ def small_body_query(param_list, fields):
             param = item[0]
         #Decide on operator
         if item[1] == "=":
-            if param != "sb-class":
+            if "sb-" not in param:
                 operator = "EQ"
             else:
                 operator = "="
@@ -301,7 +301,7 @@ def small_body_query(param_list, fields):
             value = item[2].split("-")
         else:
             value = str(item[2])
-        if param == "sb-class":
+        if "sb-" in param:
             custom = False
             #not contained in custom constraints
             string = param + operator + value
@@ -329,13 +329,18 @@ def small_body_query(param_list, fields):
             general = general + strings[item] + "&"
         else:
             custom = custom + '"' + strings[item] + '",'
-    general += "sb-cdata="
-    custom = custom[0:-1] + "]}"
-    url = general + custom
+    if len(custom) > 8:
+        general += "sb-cdata="
+        custom = custom[0:-1] + "]}"
+        url = general + custom
+    else:
+        url = general[0:-1]
     data = requests.get(url).text
     #print(data)
     #get count
     count = data.split(":")[-1].split("}")[0]
+    #print(url)
+    #print(data)
     print("Qualifying objects: " + count)
     #return data
     objects = data.split('"data":[')[1].split('],"count"')[0]
@@ -350,7 +355,7 @@ def small_body_query(param_list, fields):
     return final_output
 def number_to_command(number):
     #function that turns a number into the "command" parameter by the Horizons system
-    if number < 1000000:
-        return "'DES=" + str(2000000 + number) + "'"
+    if int(number) < 1000000:
+        return "'DES=" + str(2000000 + int(number)) + "'"
     else:
         return "'DES=" + str(number) + "'"

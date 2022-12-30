@@ -6,6 +6,16 @@ This repository contains a toolkit that uses the Horizons system to:
 Code credits:
   1. Two-body orbit propagator: Zack Fizell (source: https://towardsdatascience.com/use-python-to-create-two-body-orbits-a68aed78099c)
   2. Lambert solver: Dario Izzo (source: https://arxiv.org/abs/1403.2705, source code obtained through lamberthub (https://github.com/jorgepiloto/lamberthub))
+  
+## Dependencies
+
+In order to use this repository, you must have the following libraries installed:  
+ 1. Numpy (https://pypi.org/project/numpy/)
+ 2. Matplotlib (https://pypi.org/project/matplotlib/)
+ 3. Scipy (https://pypi.org/project/scipy/)
+ 4. Pillow (https://pypi.org/project/Pillow/)
+ 5. Lamberthub (https://pypi.org/project/lamberthub/)
+ 6. Requests (https://pypi.org/project/requests/)
 
 ## How to Use This Repository
   1. Clone it (git clone https://github.com/carson-cheng/horizons_toolkit)

@@ -21,7 +21,7 @@ In order to use this repository, you must have the following libraries installed
   1. Clone it (git clone https://github.com/carson-cheng/horizons_toolkit)
   2. Refer to the input files:
     Use perseverance.py and galileo.py for plotting existing trajectories
-    Use launch_window.py window_1.py window_2.py to plot Lambert transfer trajectories
+    Use launch_window.py, window_1.py, and window_2.py to plot Lambert transfer trajectories
     Use window_3.py to plot multiple Lambert transfer trajectories
   3. Modify these files to create the trajectories!
  

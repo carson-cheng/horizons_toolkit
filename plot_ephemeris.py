@@ -16,26 +16,6 @@ def get_object_ephemeris(command, start_date, stop_date):
     #The command variable can be a number or a name. Most of the time, the command number will point you to the asteroid bearing that number, but sometimes it points to a major planet, a barycenter or a moon instead.
     url = "https://ssd.jpl.nasa.gov/api/horizons.api?command=" + str(command) + "&obj_data=no&make_ephem=yes&ephem_type=vectors&step_size=1d&start_time=" + str(start_date) + "&stop_time=" + str(stop_date) + "&center=@0"
     return requests.get(url).text
-def sci_to_int(sci_notation):
-    #Converts scientific notation into a number
-    #Note that the letter "e" in the input must be uppercase, as is the case in Horizons ephemerides, or this function will not detect it.
-    if "E+" in sci_notation:
-        number = sci_notation.split("E+")[0]
-        exponent = sci_notation.split("E+")[1]
-    if "E-" in sci_notation:
-        number = sci_notation.split("E-")[0]
-        exponent = -(int(sci_notation.split("E-")[1]))
-    return float(number) * (10 ** int(exponent))
-def split_positive_negative(string):
-    #In the vectors of Horizons ephemerides, spaces do not follow the "=" symbol all the time. Instead, when the number is negative, the "=" symbol is directly followed by the negative sign.
-    if " " == string[0]:
-        #positive number
-        return string.split(" ")[1]
-    elif "-" == string[0]:
-        #negative number
-        return string.split(" ")[0]
-    else:
-        raise ValueError("Invalid input!")
 def read_ephemeris(ephemeris, start_date = "no_start_date", stop_date="no_stop_date"):
     #start_date and stop_date are useless now (removed for fixing a mysterious bug), but still included for backwards compatibility
     lines = ephemeris.split("\n")
@@ -359,3 +339,56 @@ def number_to_command(number):
         return "'DES=" + str(2000000 + int(number)) + "'"
     else:
         return "'DES=" + str(number) + "'"
+def get_alt_des(des):
+    #get the primary designation (e.g., 433) and alternate designations (e.g., 1956 PC) of an object
+    url = "https://ssd-api.jpl.nasa.gov/sbdb.api?des=" + str(des) + "&alt-des=1"
+    data = requests.get(url).text
+    if '"pri":"' in data:
+        prim_des = data.split('pri":"')[1].split('"')[0]
+    else:
+        prim_des = []
+    designations = data.split('des":"')[1:]
+    alt_des = [x.split('"')[0] for x in designations]
+    if len(prim_des) != 0:
+        return [prim_des] + alt_des
+    else:
+        return alt_des
+def comet_designation(des):
+    #determine whether a designation is cometary
+    #if it returns true, the designation is asteroidal; otherwise, it's cometary.
+    #for example, 2013 A1 returns false, while 2014 UN271 returns true.
+    #not suitable for use for designations with the expression of (comet)/(name) (e.g., 167P/CINEOS), or primary designations (e.g., 433). It will return an IndexError.
+    number = des.split(" ")[1]
+    uppercase = list("QWERTYUIOPASDFGHJKLZXCVBNM")
+    return number[1] in uppercase
+def plot_data(data, color_list, frame_limits, title, image_name):
+    fig = plt.figure()
+    ax = plt.axes(projection = '3d')
+    ax.set_xlim([-frame_limits * au, frame_limits * au])
+    ax.set_ylim([-frame_limits * au, frame_limits * au])
+    ax.set_zlim([-frame_limits * au, frame_limits * au])
+    color_count = 0
+    for o in data:
+        ax.plot3D(o[0], o[1], o[2], color_list[color_count])
+        ax.scatter3D(o[0][-1], o[1][-1], o[2][-1], s=8, linewidth=1, color=color_list[color_count])
+        color_count += 1
+    ax.set_title(title)
+    #Save each image
+    plt.savefig(image_name)
+    plt.close()
+def plot_2d(data, color_list, frame_limits, title, image_name):
+    fig = plt.figure()
+    ax = plt.axes()
+    ax.set_xlim([-frame_limits * au, frame_limits * au])
+    ax.set_ylim([-frame_limits * au, frame_limits * au])
+    ax.set_aspect('equal')
+    color_count = 0
+    for o in data:
+        line, = ax.plot(o[0], o[1], color_list[color_count])
+        line.set_label(label_list[color_count])
+        ax.scatter(o[0][-1], o[1][-1], s=8, linewidth=1, color=color_list[color_count])
+        color_count += 1
+    ax.set_title(title)
+    plt.savefig(image_name)
+    plt.close()
+    

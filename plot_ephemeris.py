@@ -384,8 +384,7 @@ def plot_2d(data, color_list, frame_limits, title, image_name):
     ax.set_aspect('equal')
     color_count = 0
     for o in data:
-        line, = ax.plot(o[0], o[1], color_list[color_count])
-        line.set_label(label_list[color_count])
+        ax.plot(o[0], o[1], color_list[color_count])
         ax.scatter(o[0][-1], o[1][-1], s=8, linewidth=1, color=color_list[color_count])
         color_count += 1
     ax.set_title(title)

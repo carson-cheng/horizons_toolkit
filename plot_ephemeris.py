@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 from lamberthub import izzo2015
@@ -36,7 +35,18 @@ def read_ephemeris(ephemeris, start_date = "no_start_date", stop_date="no_stop_d
     x = np.array(x)
     y = np.array(y)
     z = np.array(z)
-    return [x, y, z]
+    vx = []
+    vy = []
+    vz = []
+    for item in lines:
+        if "VX=" in item:
+            vx.append(float(item.split("VX=")[1].split(" VY")[0]))
+            vy.append(float(item.split("VY=")[1].split(" VZ")[0]))
+            vz.append(float(item.split("VZ=")[1]))
+    vx = np.array(vx)
+    vy = np.array(vy)
+    vz = np.array(vz)
+    return [x, y, z, vx, vy, vz]
 def data_to_gif(data, divisor, color_list, title, image_name, frame_limits):
     #Data format: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
     #Makes sure that all data points are of the same length
@@ -112,20 +122,29 @@ def model_2BP(state, t, mu=int(6.674e-11 * 1.989e+30)/10**9):
     dstate_dt = [x_dot, y_dot, z_dot, x_ddot, y_ddot, z_ddot]
     return dstate_dt
 def get_lambert_transfer(dep, arr, start_date, stop_date, rev):
-    dep_ephemeris = get_object_ephemeris(dep, start_date, stop_date)
-    dep_vectors = read_ephemeris(dep_ephemeris, start_date, stop_date)
-    r1 = np.array([dep_vectors[0][0] * 1000, dep_vectors[1][0] * 1000, dep_vectors[2][0] * 1000])
-    arr_ephemeris = get_object_ephemeris(arr, start_date, stop_date)
-    arr_vectors = read_ephemeris(arr_ephemeris, start_date, stop_date)
-    r2 = np.array([arr_vectors[0][-1] * 1000, arr_vectors[1][-1] * 1000, arr_vectors[2][-1] * 1000])
-    print(len(dep_vectors[0]))
-    print(len(arr_vectors[0]))
+    if type(dep) != np.ndarray:
+        dep_ephemeris = get_object_ephemeris(dep, start_date, stop_date)
+        dep_vectors = read_ephemeris(dep_ephemeris, start_date, stop_date)
+        r1 = np.array([dep_vectors[0][0] * 1000, dep_vectors[1][0] * 1000, dep_vectors[2][0] * 1000])
+        #s1 = np.array([dep_vectors[3][0] * 1000, dep_vectors[4][0] * 1000, dep_vectors[5][0] * 1000])
+    else:
+        r1 = dep
+    if type(arr) != np.ndarray:
+        arr_ephemeris = get_object_ephemeris(arr, start_date, stop_date)
+        arr_vectors = read_ephemeris(arr_ephemeris, start_date, stop_date)
+        r2 = np.array([arr_vectors[0][-1] * 1000, arr_vectors[1][-1] * 1000, arr_vectors[2][-1] * 1000])
+        #s2 = np.array([arr_vectors[3][-1] * 1000, arr_vectors[4][-1] * 1000, arr_vectors[5][-1] * 1000])
+    else:
+        r2 = arr
+    #print(len(dep_vectors[0]))
     tof = tof_time(start_date, stop_date)
     v1, v2= izzo2015(mu, r1, r2, tof, M=rev, prograde=True, low_path=True, maxiter=35, atol=1e-5, rtol=1e-7, full_output=False)
-    dep_velocity_str = dep_ephemeris.split("$$SOE")[1].split("LT =")[0]
-    arr_velocity_str = arr_ephemeris.split("$$EOE")[0].split("Z =")[-1]
-    dep_vel = [float(dep_velocity_str.split("VX=")[1].split(" VY")[0]), float(dep_velocity_str.split("VY=")[1].split(" VZ")[0]), float(dep_velocity_str.split("VZ=")[1].split("\\n")[0])]
-    arr_vel = [float(arr_velocity_str.split("VX=")[1].split(" VY")[0]), float(arr_velocity_str.split("VY=")[1].split(" VZ")[0]), float(arr_velocity_str.split("VZ=")[1].split("\\n")[0])]
+    if type(dep) != np.ndarray:
+        dep_velocity_str = dep_ephemeris.split("$$SOE")[1].split("LT =")[0]
+        dep_vel = [float(dep_velocity_str.split("VX=")[1].split(" VY")[0]), float(dep_velocity_str.split("VY=")[1].split(" VZ")[0]), float(dep_velocity_str.split("VZ=")[1].split("\\n")[0])]
+    if type(arr) != np.ndarray:
+        arr_velocity_str = arr_ephemeris.split("$$EOE")[0].split("Z =")[-1]
+        arr_vel = [float(arr_velocity_str.split("VX=")[1].split(" VY")[0]), float(arr_velocity_str.split("VY=")[1].split(" VZ")[0]), float(arr_velocity_str.split("VZ=")[1].split("\\n")[0])]
     v1_km = np.array([x / 1000 for x in v1])
     v2_km = np.array([x / 1000 for x in v2])
     print("Departure position vector: ")
@@ -136,13 +155,30 @@ def get_lambert_transfer(dep, arr, start_date, stop_date, rev):
     print(r2)
     print("Arrival velocity vector: ")
     print(v2)
-    t1 = dep_vel - v1_km
-    t2 = arr_vel - v2_km
-    dep_rel = distance(0, 0, 0, t1[0], t1[1], t1[2])
-    arr_rel = distance(0, 0, 0, t2[0], t2[1], t2[2])
-    print("Departure delta-v: " + str(dep_rel) + " km/s")
-    print("Arrival delta-v: " + str(arr_rel) + " km/s")
-    return [dep_vectors, arr_vectors, v1, v2, r1, r2, t1, t2, dep_rel, arr_rel, tof]
+    if type(dep) != np.ndarray:
+        t1 = dep_vel - v1_km
+        print("Relative velocity vector at departure: ")
+        print(t1 * 1000)
+        dep_rel = distance(0, 0, 0, t1[0], t1[1], t1[2])
+        print("Departure delta-v: " + str(dep_rel) + " km/s")
+    if type(arr) != np.ndarray:
+        t2 = arr_vel - v2_km
+        print("Relative velocity vector at arrival: ")
+        print(t2 * 1000)
+        arr_rel = distance(0, 0, 0, t2[0], t2[1], t2[2])
+    if type(dep) != np.ndarray:
+        print("Departure delta-v: " + str(dep_rel) + " km/s")
+    if type(arr) != np.ndarray:
+        print("Arrival delta-v: " + str(arr_rel) + " km/s")
+    print("\n")
+    if type(arr) != np.ndarray and type(dep) != np.ndarray:
+        return [dep_vectors, arr_vectors, v1, v2, r1, r2, t1, t2, dep_rel, arr_rel, tof]
+    elif type(arr) != np.ndarray:
+        return [np.array([]), arr_vectors, v1, v2, r1, r2, None, t2, None, arr_rel, tof]
+    elif type(dep) != np.ndarray:
+        return [dep_vectors, np.array([]), v1, v2, r1, r2, t1, None, dep_rel, None, tof]
+    else:
+        return [np.array([]), np.array([]), v1, v2, r1, r2, None, None, None, None, tof]
 def plot_lambert_transfer(dep_vectors, arr_vectors, v1, v2, r1, r2, tof, frame_limits, title, color_list, propagate_time, match_distance, plot=True, propagate=True):
     #two-body orbit propagation code start
     #Credit: Zack Fizell
@@ -163,8 +199,7 @@ def plot_lambert_transfer(dep_vectors, arr_vectors, v1, v2, r1, r2, tof, frame_l
     #- np.array([dep_vectors[0][0], dep_vectors[1][0], dep_vectors[2][0]]
     #orbit propagation code end
     print(distance(0, 0, 0, X_Sat[-1], Y_Sat[-1], Z_Sat[-1]) / au)
-    print(np.array([X_Sat[1], Y_Sat[1], Z_Sat[1]])- np.array([dep_vectors[0][1], dep_vectors[1][1], dep_vectors[2][1]]))
-    print(np.array([X_Sat[-2], Y_Sat[-2], Z_Sat[-2]]) - np.array([dep_vectors[0][-2], dep_vectors[1][-2], dep_vectors[2][-2]]))
+    print(np.array([X_Sat[-2], Y_Sat[-2], Z_Sat[-2]])- np.array([dep_vectors[0][-2], dep_vectors[1][-2], dep_vectors[2][-2]]))
     #Get orbit intersection points with different distances
     sol_1 = odeint(model_2BP, state_0, np.linspace(0, propagate_time * 86400, propagate_time))
     X_Sat1 = sol[:, 0]  # X-coord [km] of satellite over time interval
@@ -294,8 +329,8 @@ def small_body_query(param_list, fields):
                 string = param + "|" + operator + "|" + value[0] + "|" + value[1]
         status.append(custom)
         strings.append(string)
-    print(status)
-    print(strings)
+    #print(status)
+    #print(strings)
     general = "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields="
     custom = '{"AND":['
     #first deal with the fields
@@ -325,7 +360,7 @@ def small_body_query(param_list, fields):
     #return data
     objects = data.split('"data":[')[1].split('],"count"')[0]
     objs = objects.split("[")[1:]
-    print(objs[-1])
+    #print(objs[-1])
     final_output = []
     for item in objs:
         processed = item.split("]")[0]

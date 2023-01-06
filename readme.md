@@ -54,8 +54,6 @@ The two following lines contain the relative position of the trajectory of the o
 The second-last line contains the data on the minimum distance of the trajectory from a specific heliocentric distance.  
 The last line contains the time from launch to the end of orbit propagation. Note that it is normally longer than time of travel, but it can also be shorter (as in this case).  
 
-When the trajectory is being generated into a gif file, positive integers are printed in ascending order. This records a frame being created and saved.   Note that you should not generate more than 240 frames in a single file, or an error saying that too many files are open may appear.  
-
 After the trajectory is generated, you may see something like this:
 
 Minimum distance for 'DES=2000001': 2.1415064661950716 AU  
@@ -75,8 +73,7 @@ This is the closest_approach function being called repeatedly in a for-loop. Thi
  
  ## Improvements
  
-  1. Support gifs with more frames with an animate graph function that does not save lots of temporary files
-  2. Use a more rigorous MOID computation function
-  3. Include a v-infinity matching function to calculate gravity assists
-  4. Include the perturbations of the planets instead of simply using a two-body solution (e.g., using patch conic approximation) (this is more difficult as it requires a completely different approach for the computation, but it should be doable using existing software)
-  5. Use a trajectory optimizer to optimize arrival times (this also requires other software packages and adds to the list of dependencies for the repository)
+  1. Use a more rigorous MOID computation function
+  2. Include a v-infinity matching function to calculate gravity assists
+  3. Include the perturbations of the planets instead of simply using a two-body solution (e.g., using patch conic approximation) (this is more difficult as it requires a completely different approach for the computation, but it should be doable using existing software)
+  4. Use a trajectory optimizer to optimize arrival times (this also requires other software packages and adds to the list of dependencies for the repository)

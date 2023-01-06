@@ -89,7 +89,9 @@ def data_to_gif(data, divisor, color_list, title, image_name, frame_limits):
     images = []
     for item in range(int(frames)):
         photo = Image.open(str(item) + ".png")
-        images.append(photo)
+        image = photo.copy()
+        images.append(image)
+        photo.close()
     #images = [Image.open(f"{n}.png") for n in range(frames)]
     images[0].save(image_name, save_all=True, append_images=images[1:], duration=100, loop=0, fps=200)
     #Clean up temporary files

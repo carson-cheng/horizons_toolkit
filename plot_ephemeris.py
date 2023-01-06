@@ -21,10 +21,10 @@ def rotate(point_to_be_rotated, angle, center_point = (0,0)):
     qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
     qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
     return [qx, qy]'''
-def get_object_ephemeris(command, start_date, stop_date, step_size="1d"):
+def get_object_ephemeris(command, start_date, stop_date, step_size="1d", center=0):
     #Gets the object's ephemeris vectors from the Horizons system
     #The command variable can be a number or a name. Most of the time, the command number will point you to the asteroid bearing that number, but sometimes it points to a major planet, a barycenter or a moon instead.
-    url = "https://ssd.jpl.nasa.gov/api/horizons.api?command=" + str(command) + "&obj_data=no&make_ephem=yes&ephem_type=vectors&step_size=" + step_size + "&start_time=" + str(start_date) + "&stop_time=" + str(stop_date) + "&center=@0"
+    url = "https://ssd.jpl.nasa.gov/api/horizons.api?command=" + str(command) + "&obj_data=no&make_ephem=yes&ephem_type=vectors&step_size=" + str(step_size) + "&start_time=" + str(start_date) + "&stop_time=" + str(stop_date) + "&center=@" + str(center)
     return requests.get(url).text
 def read_ephemeris(ephemeris, start_date = "no_start_date", stop_date="no_stop_date", period=0):
     #start_date and stop_date are useless now (removed for fixing a mysterious bug), but still included for backwards compatibility
@@ -49,10 +49,10 @@ def read_ephemeris(ephemeris, start_date = "no_start_date", stop_date="no_stop_d
                 z.append(z_obj)
             else:
                 deg = -(counter % period * (360 / period))
-                print(deg)
-                print([x_obj, y_obj])
+                #print(deg)
+                #print([x_obj, y_obj])
                 rotated = rotate([x_obj, y_obj], deg)
-                print(rotated)
+                #print(rotated)
                 x.append(rotated[0])
                 y.append(rotated[1])
                 z.append(z_obj)
@@ -97,7 +97,7 @@ def data_to_gif(data, divisor, color_list, title, image_name, frame_limits, gif_
         raise ValueError("Image filename must contain gif.")
     #Now make each frame of the plot
     for item in range(math.floor(frames)):
-        fig = plt.figure()
+        fig = plt.figure(dpi=150)
         ax = plt.axes(projection = '3d')
         ax.set_xlim([-frame_limits * au, frame_limits * au])
         ax.set_ylim([-frame_limits * au, frame_limits * au])
@@ -301,13 +301,17 @@ def get_moid(command1, command2, start_date, orbital_period):
     url = "https://ssd-api.jpl.nasa.gov/jd_cal.api?jd=" + str(arrival_jd)
     data = requests.get(url).text
     stop_date = data.split('"cd":"')[1].split(" ")[0]
-    ephemeris1 = read_ephemeris(get_object_ephemeris(command1, start_date, stop_date), start_date, stop_date)
-    ephemeris2 = read_ephemeris(get_object_ephemeris(command2, start_date, stop_date), start_date, stop_date)
+    ephemeris1 = read_ephemeris(get_object_ephemeris(command1, start_date, stop_date, step_size="1d"), start_date, stop_date)
+    ephemeris2 = read_ephemeris(get_object_ephemeris(command2, start_date, stop_date, step_size="1d"), start_date, stop_date)
     distances = []
+    counter = 0
     for item in range(len(ephemeris1[0])):
         for item2 in range(len(ephemeris2[0])):
             dist = distance(ephemeris1[0][item], ephemeris1[1][item], ephemeris1[2][item], ephemeris2[0][item2], ephemeris2[1][item2], ephemeris2[2][item2])
             distances.append(dist)
+            if counter % 1000000 == 0:
+                print(counter)
+            counter += 1
     return min(distances) / au
 def small_body_query(param_list, fields):
     #retrieves data from the small_body database
@@ -428,7 +432,7 @@ def comet_designation(des):
     uppercase = list("QWERTYUIOPASDFGHJKLZXCVBNM")
     return number[1] in uppercase
 def plot_data(data, color_list, frame_limits, title, image_name):
-    fig = plt.figure()
+    fig = plt.figure(dpi=1200)
     ax = plt.axes(projection = '3d')
     ax.set_xlim([-frame_limits * au, frame_limits * au])
     ax.set_ylim([-frame_limits * au, frame_limits * au])

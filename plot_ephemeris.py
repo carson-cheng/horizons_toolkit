@@ -10,12 +10,23 @@ au = 149597870.7
 mu = int(6.674e-11 * 1.989e+30)
 def distance(x1, y1, z1, x2, y2, z2):
     return abs(math.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2))
-def get_object_ephemeris(command, start_date, stop_date):
+def rotate(point_to_be_rotated, angle, center_point = (0,0)):
+    angle = math.radians(angle)
+    xnew = math.cos(angle)*(point_to_be_rotated[0] - center_point[0]) - math.sin(angle)*(point_to_be_rotated[1] - center_point[1]) + center_point[0]
+    ynew = math.sin(angle)*(point_to_be_rotated[0] - center_point[0]) + math.cos(angle)*(point_to_be_rotated[1] - center_point[1]) + center_point[1]
+    return [xnew, ynew]
+'''def rotate(point, angle, origin=[0, 0]):
+    ox, oy = origin[0], origin[1]
+    px, py = point[0], point[1]
+    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
+    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+    return [qx, qy]'''
+def get_object_ephemeris(command, start_date, stop_date, step_size="1d"):
     #Gets the object's ephemeris vectors from the Horizons system
     #The command variable can be a number or a name. Most of the time, the command number will point you to the asteroid bearing that number, but sometimes it points to a major planet, a barycenter or a moon instead.
-    url = "https://ssd.jpl.nasa.gov/api/horizons.api?command=" + str(command) + "&obj_data=no&make_ephem=yes&ephem_type=vectors&step_size=1d&start_time=" + str(start_date) + "&stop_time=" + str(stop_date) + "&center=@0"
+    url = "https://ssd.jpl.nasa.gov/api/horizons.api?command=" + str(command) + "&obj_data=no&make_ephem=yes&ephem_type=vectors&step_size=" + step_size + "&start_time=" + str(start_date) + "&stop_time=" + str(stop_date) + "&center=@0"
     return requests.get(url).text
-def read_ephemeris(ephemeris, start_date = "no_start_date", stop_date="no_stop_date"):
+def read_ephemeris(ephemeris, start_date = "no_start_date", stop_date="no_stop_date", period=0):
     #start_date and stop_date are useless now (removed for fixing a mysterious bug), but still included for backwards compatibility
     lines = ephemeris.split("\n")
     #print(len(lines))
@@ -25,12 +36,30 @@ def read_ephemeris(ephemeris, start_date = "no_start_date", stop_date="no_stop_d
     y = []
     z = []
     import time
+    counter = 0
     for item in lines:
         if "X =" in item:
             #print(item)
-            x.append(float(item.split("X =")[1].split(" Y")[0]))
+            x_obj = float(item.split("X =")[1].split(" Y")[0])
+            y_obj = float(item.split("Y =")[1].split(" Z")[0])
+            z_obj = float(item.split("Z =")[1])
+            if period == 0:
+                x.append(x_obj)
+                y.append(y_obj)
+                z.append(z_obj)
+            else:
+                deg = -(counter % period * (360 / period))
+                print(deg)
+                print([x_obj, y_obj])
+                rotated = rotate([x_obj, y_obj], deg)
+                print(rotated)
+                x.append(rotated[0])
+                y.append(rotated[1])
+                z.append(z_obj)
+            '''x.append(float(item.split("X =")[1].split(" Y")[0]))
             y.append(float(item.split("Y =")[1].split(" Z")[0]))
-            z.append(float(item.split("Z =")[1]))
+            z.append(float(item.split("Z =")[1]))'''
+            counter += 1
     #Turns standard Python lists into numpy arrays for plotting
     x = np.array(x)
     y = np.array(y)
@@ -47,7 +76,7 @@ def read_ephemeris(ephemeris, start_date = "no_start_date", stop_date="no_stop_d
     vy = np.array(vy)
     vz = np.array(vz)
     return [x, y, z, vx, vy, vz]
-def data_to_gif(data, divisor, color_list, title, image_name, frame_limits):
+def data_to_gif(data, divisor, color_list, title, image_name, frame_limits, gif_divisor=1):
     #Data format: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
     #Makes sure that all data points are of the same length
     length = -1
@@ -59,7 +88,7 @@ def data_to_gif(data, divisor, color_list, title, image_name, frame_limits):
             else:
                 days = obj_len
     #days = length
-    frames = days / divisor
+    frames = days / divisor - 1
     #Makes sure that each data point has a color
     if len(data) != len(color_list):
         raise ValueError("Number of objects does not equal to the number of colors.")
@@ -75,6 +104,7 @@ def data_to_gif(data, divisor, color_list, title, image_name, frame_limits):
         ax.set_zlim([-frame_limits * au, frame_limits * au])
         color_count = 0
         for o in data:
+            o[0][item*divisor]
             ax.plot3D(o[0][:item*divisor], o[1][:item*divisor], o[2][:item*divisor], color_list[color_count])
             ax.scatter3D(o[0][item*divisor], o[1][item*divisor], o[2][item*divisor], s=8, linewidth=1, color=color_list[color_count])
             color_count += 1
@@ -84,13 +114,12 @@ def data_to_gif(data, divisor, color_list, title, image_name, frame_limits):
         plt.close()
         print(item)
     #Credit: https://stackoverflow.com/questions/38118598/3d-animation-using-matplotlib
-    #If you open too many files at once, you may get an error saying that there are too many files open. As such, it's best to keep the file within 200 frames.
-    #Another approach is to save the file in increments of 200 frames, but it has yet to be implemented (waiting for a more stable version)
     images = []
     for item in range(int(frames)):
         photo = Image.open(str(item) + ".png")
         image = photo.copy()
-        images.append(image)
+        if item % gif_divisor == 0:
+            images.append(image)
         photo.close()
     #images = [Image.open(f"{n}.png") for n in range(frames)]
     images[0].save(image_name, save_all=True, append_images=images[1:], duration=100, loop=0, fps=200)

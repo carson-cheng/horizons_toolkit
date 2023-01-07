@@ -358,15 +358,18 @@ def small_body_query(param_list, fields):
         else:
             custom = True
             #contained in custom constraints
-            if operator != "RG":
-                string = param + "|" + operator + "|" + value
-            else:
+            print(operator == "DF")
+            if operator == "RG":
                 string = param + "|" + operator + "|" + value[0] + "|" + value[1]
+            if operator == "DF":
+                string = param + "|" + operator
+            else:
+                string = param + "|" + operator + "|" + value
         status.append(custom)
         strings.append(string)
     #print(status)
     #print(strings)
-    general = "https://ssd-api.jpl.nasa.gov/sbdb_query.api?fields="
+    general = "https://ssd-api.jpl.nasa.gov/sbdb_query.api?full-prec=1&fields="
     custom = '{"AND":['
     #first deal with the fields
     fields = [str(x) + "," for x in fields]
@@ -386,6 +389,7 @@ def small_body_query(param_list, fields):
     else:
         url = general[0:-1]
     data = requests.get(url).text
+    print(url)
     #print(data)
     #get count
     count = data.split(":")[-1].split("}")[0]
